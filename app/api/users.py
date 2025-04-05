@@ -3,29 +3,22 @@ from flask_jwt_extended import jwt_required
 from app.models import User
 from app.extensions import db
 from sqlalchemy.exc import IntegrityError
+from pydantic import ValidationError
+from app.schemas import UserCreate
 
 users_bp = Blueprint('users', __name__)
 
 
 @users_bp.route('', methods=['POST'])
 def create_user():
-    """Create a new user-waiter"""
     data = request.get_json()
     
-    # Validate required fields
-    if not data.get('email') or not data.get('name'):
-        return jsonify({"message": "Email and name are required"}), 400
-    
-    # Check for email uniqueness
-    if User.query.filter_by(email=data['email']).first():
-        return jsonify({"message": "Email already exists"}), 409
-    
+    user_data = UserCreate.model_validate(data)
     try:
         new_user = User(
-            email=data['email'],
-            name=data['name']
+            email=user_data['email'],
+            name=user_data['name']
         )
-        
         db.session.add(new_user)
         db.session.commit()
         
@@ -33,6 +26,20 @@ def create_user():
             "message": "User created successfully",
             "user": new_user.to_dict()
         }), 201
+    
+    except ValidationError as e:
+        errors = []
+        for error in e.errors():
+            error_location = ".".join(str(loc) for loc in error["loc"])
+            errors.append({
+                "field": error_location,
+                "message": error["msg"]
+            })
+        
+        return jsonify({
+            "message": "Validation error",
+            "errors": errors
+        }), 400
     
     except IntegrityError:
         db.session.rollback()
@@ -42,7 +49,6 @@ def create_user():
 @users_bp.route('', methods=['GET'])
 @jwt_required()
 def get_users():
-    """Get list of all user-waiters"""
     users = User.query.all()
     return jsonify({
         "users": [user.to_dict() for user in users]
@@ -52,7 +58,6 @@ def get_users():
 @users_bp.route('/<user_id>', methods=['GET'])
 @jwt_required()
 def get_user(user_id):
-    """Get user-waiter by ID"""
     user = User.query.get(user_id)
     
     if not user:

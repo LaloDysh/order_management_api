@@ -2,30 +2,41 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from app.models import User
 from app.extensions import db, jwt
-
+from app.schemas import UserLogin
+from pydantic import ValidationError
 auth_bp = Blueprint('auth', __name__)
 
 
 @auth_bp.route('/login', methods=['POST'])
 def login():
-    """Login endpoint for user-waiters to get JWT tokens"""
-    email = request.json.get('email')
-    
-    if not email:
-        return jsonify({"message": "Email is required"}), 400
-    
-    user = User.query.filter_by(email=email).first()
-    
-    if not user:
-        return jsonify({"message": "User not found"}), 404
-    
-    # Create the JWT token
-    access_token = create_access_token(identity=user.id)
-    
-    return jsonify({
-        "access_token": access_token,
-        "user": user.to_dict()
-    }), 200
+    data = request.get_json()
+    try:
+        user_data = UserLogin.model_validate(data)
+        user = User.query.filter_by(email=user_data.email).first()
+        
+        if not user:
+            return jsonify({"message": "User not found"}), 404
+        
+        # Create the JWT token
+        access_token = create_access_token(identity=user.id)
+        
+        return jsonify({
+            "access_token": access_token,
+            "user": user.to_dict()
+        }), 200
+    except ValidationError as e:
+        errors = []
+        for error in e.errors():
+            error_location = ".".join(str(loc) for loc in error["loc"])
+            errors.append({
+                "field": error_location,
+                "message": error["msg"]
+            })
+        
+        return jsonify({
+            "message": "Validation error",
+            "errors": errors
+        }), 400
 
 
 @auth_bp.route('/verify', methods=['GET'])

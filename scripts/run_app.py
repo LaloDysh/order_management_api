@@ -17,7 +17,7 @@ from app import create_app
 def parse_args():
     parser = argparse.ArgumentParser(description='Run the Order Management API')
     parser.add_argument('--host', default='0.0.0.0', help='Host to bind to')
-    parser.add_argument('--port', type=int, default=5000, help='Port to bind to')
+    parser.add_argument('--port', type=int, default=1995, help='Port to bind to')
     parser.add_argument('--debug', action='store_true', help='Enable debug mode')
     parser.add_argument('--reload', action='store_true', help='Enable auto-reload')
     parser.add_argument('--workers', type=int, default=1, help='Number of worker processes (production only)')

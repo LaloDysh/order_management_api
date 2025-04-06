@@ -1,6 +1,23 @@
 from pydantic import BaseModel, Field, StrictStr, StrictInt, StrictFloat, field_validator
-from typing import List
+from typing import List, Optional
+from datetime import datetime
 import re
+
+class DateRangeParams(BaseModel):
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+    
+    @field_validator('start_date', 'end_date')
+    def validate_date_format(cls, value):
+        if value is None:
+            return None
+   
+        try:
+            # Try to convert to datetime to validate format
+            datetime.strptime(value, '%Y-%m-%d')
+            return value
+        except ValueError:
+            raise ValueError("Date must be in YYYY-MM-DD format")
 
 class UserCreate(BaseModel):
     name: StrictStr = Field(min_length=3, max_length=50)
@@ -46,14 +63,7 @@ class OrderItemCreate(BaseModel):
     
     model_config = {
         "extra": "forbid", 
-        "validate_assignment": True,
-        "json_schema_extra": {
-            "example": {
-                "name": "Sandwich",
-                "price": 9.25,
-                "quantity": 2
-            }
-        }
+        "validate_assignment": True
     }
 
 class OrderCreate(BaseModel):
@@ -73,22 +83,5 @@ class OrderCreate(BaseModel):
     
     model_config = {
         "extra": "forbid",
-        "validate_assignment": True,
-        "json_schema_extra": {
-            "example": {
-                "customer_name": "John Doe",
-                "products": [
-                    {
-                        "name": "Sandwich",
-                        "price": 9.00,
-                        "quantity": 2
-                    },
-                    {
-                        "name": "Salad",
-                        "price": 9.25,
-                        "quantity": 2
-                    }
-                ]
-            }
-        }
+        "validate_assignment": True
     }

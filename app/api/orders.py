@@ -5,6 +5,7 @@ from app.extensions import db
 from sqlalchemy.exc import IntegrityError
 from pydantic import ValidationError
 from app.schemas import OrderCreate
+from app.utils.helpers import format_error_message
 
 orders_bp = Blueprint('orders', __name__)
 
@@ -12,7 +13,6 @@ orders_bp = Blueprint('orders', __name__)
 @jwt_required()
 def create_order():
     current_user_id = get_jwt_identity()
-    
     user = User.query.get(current_user_id)
     if not user:
         return jsonify({"message": "User not found"}), 404
@@ -23,7 +23,6 @@ def create_order():
     
     try:
         order_data = OrderCreate.model_validate(data)
-        
         total_price = 0
         order_products = []
         
@@ -38,6 +37,7 @@ def create_order():
                 )
                 db.session.add(product)
                 db.session.flush()
+                
             if not product.price:
                 order_product = OrderProduct(
                     product_id=product.id,
@@ -62,39 +62,30 @@ def create_order():
         )
         
         db.session.add(new_order)
-        db.session.flush() 
+        db.session.flush()
         
         for order_product in order_products:
             order_product.order_id = new_order.id
             db.session.add(order_product)
-        
+            
         db.session.commit()
         
         return jsonify({
             "message": "Order created successfully",
             "order": new_order.to_dict()
         }), 201
-    
-    except ValidationError as e:
-        errors = []
-        for error in e.errors():
-            error_location = ".".join(str(loc) for loc in error["loc"])
-            errors.append({
-                "field": error_location,
-                "message": error["msg"]
-            })
         
-        return jsonify({
-            "message": "Validation error",
-            "errors": errors
-        }), 400
-    
+    except ValidationError as e:
+        error_details = e.errors()
+        error_messages = [format_error_message(err) for err in error_details]
+        return jsonify({"message": "Validation error", "details": error_messages}), 400
+        
     except IntegrityError as e:
         db.session.rollback()
         return jsonify({
             "message": f"Database error: {str(e)}"
         }), 500
-    
+        
     except Exception as e:
         db.session.rollback()
         return jsonify({

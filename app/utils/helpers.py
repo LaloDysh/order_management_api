@@ -3,24 +3,18 @@ from flask import request
 import re
 
 
-def validate_email(email):
-    """Validate email format"""
-    email_regex = r'^\S+@\S+\.\S+$'
-    return re.match(email_regex, email) is not None
-
-
-def parse_date_or_none(date_str):
-    """Parse date string in YYYY-MM-DD format"""
-    if not date_str:
-        return None
-    try:
-        return datetime.strptime(date_str, '%Y-%m-%d')
-    except ValueError:
-        return None
+def format_error_message(err):
+    if isinstance(err['loc'], tuple) and len(err['loc']) > 0:
+        field_name = err['loc'][-1]
+    else:
+        field_name = err['loc'][0] if err['loc'] else "unknown field"
+    
+    message = err['msg']
+    
+    return f"{field_name}: {message}"
 
 
 def get_pagination_params():
-    """Extract and validate pagination parameters"""
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 10, type=int)
     

@@ -1,17 +1,13 @@
 import os
 from datetime import timedelta
 
-basedir = os.path.abspath(os.path.dirname(__file__))
-
+JWT_ACCESS_TOKEN_EXPIRES = os.environ.get('JWT_ACCESS_TOKEN_EXPIRES', '86400')
 
 class Config:
-    # Flask
-    SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-key-change-in-production')
+    SECRET_KEY = os.environ.get('SECRET_KEY', 'dev_key_change_this_in_production')
     
-    # Database
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URI')
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URI', 'postgresql://postgres:postgres@db:5432/order_management')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
-    # JWT
-    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'jwt-secret-key-change-in-production')
-    JWT_ACCESS_TOKEN_EXPIRES = timedelta(seconds=int(os.environ.get('JWT_ACCESS_TOKEN_EXPIRES')))
+    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'jwt_dev_key_change_this_in_production')
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(seconds=int(JWT_ACCESS_TOKEN_EXPIRES))

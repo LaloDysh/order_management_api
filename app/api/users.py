@@ -5,7 +5,7 @@ from app.extensions import db
 from sqlalchemy.exc import IntegrityError
 from pydantic import ValidationError
 from app.schemas import UserCreate
-
+from app.utils.helpers import format_error_message
 users_bp = Blueprint('users', __name__)
 
 
@@ -13,11 +13,11 @@ users_bp = Blueprint('users', __name__)
 def create_user():
     data = request.get_json()
     
-    user_data = UserCreate.model_validate(data)
     try:
+        user_data = UserCreate.model_validate(data)
         new_user = User(
-            email=user_data['email'],
-            name=user_data['name']
+            email=user_data.email,
+            name=user_data.name
         )
         db.session.add(new_user)
         db.session.commit()
@@ -28,22 +28,17 @@ def create_user():
         }), 201
     
     except ValidationError as e:
-        errors = []
-        for error in e.errors():
-            error_location = ".".join(str(loc) for loc in error["loc"])
-            errors.append({
-                "field": error_location,
-                "message": error["msg"]
-            })
-        
-        return jsonify({
-            "message": "Validation error",
-            "errors": errors
-        }), 400
-    
+        error_details = e.errors()
+        error_messages = [format_error_message(err) for err in error_details]
+        return jsonify({"message": "Validation error", "details": error_messages}), 400
     except IntegrityError:
         db.session.rollback()
-        return jsonify({"message": "An error occurred while creating the user"}), 500
+        return jsonify({"message": "A user with this email already exists"}), 409
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"User creation error: {str(e)}")
+        return jsonify({"message": "An unexpected error occurred"}), 500
 
 
 @users_bp.route('', methods=['GET'])

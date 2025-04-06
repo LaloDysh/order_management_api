@@ -1,5 +1,4 @@
 version: '3.8'
-
 services:
   api:
     build: .
@@ -8,13 +7,16 @@ services:
     environment:
       - FLASK_APP=run.py
       - FLASK_ENV=development
-      - DATABASE_URI=postgresql://order_user:postgres@localhost:5432/order_management
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - DATABASE_URI=postgresql://postgres:postgres@db:5432/order_management
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-default_dev_key_change_in_production}
     depends_on:
       - db
     volumes:
       - .:/app
-    command: flask run --host=0.0.0.0
+    # Command to initialize the DB and then start the application
+    command: >
+      sh -c "python init_db.py &&
+             flask run --host=0.0.0.0 --port=1995"
 
   db:
     image: postgres:14
@@ -26,6 +28,11 @@ services:
       - POSTGRES_DB=order_management
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
 volumes:
   postgres_data:

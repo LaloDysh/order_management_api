@@ -7,16 +7,31 @@ services:
     environment:
       - FLASK_APP=run.py
       - FLASK_ENV=development
+      # - FLASK_ENV=production
       - DATABASE_URI=postgresql://postgres:postgres@db:5432/order_management
       - JWT_SECRET_KEY=${JWT_SECRET_KEY:-default_dev_key_change_in_production}
+      - LOG_LEVEL=INFO
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     volumes:
-      - .:/app
-    # Command to initialize the DB and then start the application
+      - ./logs:/app/logs
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+    restart: unless-stopped
+    # Use Gunicorn with multiple workers for production
     command: >
-      sh -c "python init_db.py &&
-             flask run --host=0.0.0.0 --port=1995"
+      gunicorn --bind 0.0.0.0:1995 
+      --workers=4 
+      --threads=2 
+      --timeout=120 
+      --access-logfile=- 
+      --error-logfile=- 
+      --log-level=info 
+      "run:app"
 
   db:
     image: postgres:14
@@ -26,13 +41,27 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=order_management
+      # PostgreSQL performance tuning
+      - POSTGRES_SHARED_BUFFERS=256MB
+      - POSTGRES_EFFECTIVE_CACHE_SIZE=768MB
+      - POSTGRES_WORK_MEM=8MB
+      - POSTGRES_MAINTENANCE_WORK_MEM=64MB
+      - POSTGRES_MAX_CONNECTIONS=100
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      # Add init scripts volume to add our stored procedures
+      - ./sql/init:/docker-entrypoint-initdb.d
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
 
 volumes:
   postgres_data:

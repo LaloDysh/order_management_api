@@ -1,13 +1,15 @@
 #!/usr/bin/env python
 """
 Database initialization script for the Order Management API.
-This script creates the initial migration and applies it to the database.
+This script creates the initial migration, applies it to the database,
+sets default column values, and creates stored procedures.
 """
 
 import os
 import sys
 import subprocess
 from pathlib import Path
+import init_stored_procedures as STORED_PROCEDURES
 
 # Add the project root to the Python path
 project_root = Path(__file__).parent.parent
@@ -58,6 +60,65 @@ def initialize_database():
         
         print("Database initialization completed successfully.")
         return True
+
+
+def apply_default_column_settings():
+    """Apply default column settings for all tables."""
+    print("Applying default column settings to tables...")
+    
+    with app.app_context():
+        try:
+            # Get database connection
+            conn = db.engine.connect()
+            
+            # Apply default settings for products table
+            conn.execute(db.text("ALTER TABLE products ALTER COLUMN id SET DEFAULT gen_random_uuid();"))
+            conn.execute(db.text("ALTER TABLE products ALTER COLUMN created_at SET DEFAULT NOW();"))
+            
+            # Apply default settings for orders table
+            conn.execute(db.text("ALTER TABLE orders ALTER COLUMN id SET DEFAULT gen_random_uuid();"))
+            conn.execute(db.text("ALTER TABLE orders ALTER COLUMN created_at SET DEFAULT NOW();"))
+            
+            # Apply default settings for order_products table
+            conn.execute(db.text("ALTER TABLE order_products ALTER COLUMN id SET DEFAULT gen_random_uuid();"))
+            conn.execute(db.text("ALTER TABLE order_products ALTER COLUMN created_at SET DEFAULT NOW();"))
+            
+            # Apply default settings for users table
+            conn.execute(db.text("ALTER TABLE users ALTER COLUMN id SET DEFAULT gen_random_uuid();"))
+            conn.execute(db.text("ALTER TABLE users ALTER COLUMN created_at SET DEFAULT NOW();"))
+            
+            conn.commit()
+            conn.close()
+            
+            print("Default column settings applied successfully.")
+            return True
+        except Exception as e:
+            print(f"Error applying default column settings: {e}")
+            return False
+
+
+def create_stored_procedures():
+    """Create or replace stored procedures in the database."""
+    print("Creating stored procedures...")
+    
+    with app.app_context():
+        try:
+            # Get database connection
+            conn = db.engine.connect()
+            
+            # Create each stored procedure
+            for name, sql in STORED_PROCEDURES.items():
+                print(f"Creating stored procedure: {name}")
+                conn.execute(db.text(sql))
+                
+            conn.commit()
+            conn.close()
+            
+            print(f"Successfully created {len(STORED_PROCEDURES)} stored procedures")
+            return True
+        except Exception as e:
+            print(f"Error creating stored procedures: {e}")
+            return False
 
 
 def seed_sample_data():
@@ -142,8 +203,30 @@ def seed_sample_data():
 
 
 if __name__ == "__main__":
-    if initialize_database():
-        seed_sample_data()
-    else:
+    success = True
+    
+    # Step 1: Initialize database with migrations
+    if not initialize_database():
         print("Database initialization failed.")
         sys.exit(1)
+    
+    # Step 2: Apply default column settings
+    if not apply_default_column_settings():
+        print("Failed to apply default column settings.")
+        success = False
+    
+    # Step 3: Create stored procedures
+    if not create_stored_procedures():
+        print("Failed to create stored procedures.")
+        success = False
+    
+    # Step 4: Seed sample data
+    if success and not seed_sample_data():
+        print("Failed to seed sample data.")
+        success = False
+    
+    if not success:
+        print("Database setup completed with some errors.")
+        sys.exit(1)
+    
+    print("Database setup completed successfully!")

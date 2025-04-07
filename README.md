@@ -107,6 +107,12 @@ pytest --cov=app tests/
 
 ## Database Schema
 
+´´´ 
+# run the script to generate all the schema in DB 
+python3 scripts/initialize_db.py
+
+´´´
+
 - **Users**: Stores User-Waiters information
 - **Products**: Stores product catalog
 - **Orders**: Stores order information with customer details

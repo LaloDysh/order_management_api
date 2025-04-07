@@ -1,7 +1,3 @@
-# Setup Guide
-
-This document provides detailed instructions for setting up the Order Management API in various environments.
-
 ## Prerequisites
 
 - Python 3.11+
@@ -151,18 +147,3 @@ flask db migrate -m "Description of changes"
 # Apply migration
 flask db upgrade
 ```
-
-## Scaling Considerations
-
-1. **Horizontal Scaling**:
-   - The application is stateless and can be scaled horizontally
-   - Use a load balancer to distribute traffic across multiple instances
-
-2. **Database Scaling**:
-   - Consider PostgreSQL replication for read scaling
-   - Implement connection pooling
-   - Add appropriate indexes for high-traffic queries
-
-3. **Caching**:
-   - Add Redis for caching frequently requested data
-   - Implement proper cache invalidation strategies

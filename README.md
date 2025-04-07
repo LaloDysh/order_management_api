@@ -1,16 +1,5 @@
 # Order Management API
 
-A RESTful API for managing restaurant orders, waiters, and sales reporting. Built with Flask and designed for high traffic and scalability.
-
-## Features
-
-* User-Waiter management
-* Order creation with product management
-* Sales reporting with filtering and sorting
-* JWT Authentication
-* RESTful API design
-* Optimized database queries
-* Containerized deployment with Docker
 
 ## Technical Stack
 
@@ -20,16 +9,6 @@ A RESTful API for managing restaurant orders, waiters, and sales reporting. Buil
 * **Testing**: Pytest
 * **Deployment**: Docker, Docker Compose
 
-## Project Structure
-
-The project follows a modular architecture:
-
-- `app/`: Main application package
-  - `models/`: Database models
-  - `api/`: API routes and controllers
-  - `utils/`: Helper functions and utilities
-- `tests/`: Unit and integration tests
-- `migrations/`: Database migrations
 
 ## Setup and Installation
 
@@ -90,7 +69,7 @@ The API will be available at: http://localhost:5000
 
 6. Run the development server:
    ```bash
-   flask run
+   python3 scripts/run_app.py
    ```
 
 ## API Endpoints
@@ -132,27 +111,3 @@ pytest --cov=app tests/
 - **Products**: Stores product catalog
 - **Orders**: Stores order information with customer details
 - **OrderProducts**: Junction table mapping products to orders with quantity and price
-
-## Performance Considerations
-
-- Database indexes on frequently queried fields
-- Pagination for listing endpoints
-- Optimized queries for reports
-- Connection pooling for database access
-- Proper error handling and transaction management
-
-## Architecture Decisions
-
-### Authentication
-JWT tokens are used for authentication, providing a stateless mechanism for API protection. This choice facilitates horizontal scaling and improves performance by eliminating the need for session storage.
-
-### Database Design
-The relational schema is optimized for ACID transactions and data integrity, with proper indexes for high-traffic queries. Products are reused across orders to maintain data consistency.
-
-### Code Organization
-The code follows a modular approach with clear separation of concerns:
-- Models for database interaction
-- API modules for request handling
-- Utilities for shared functionality
-
-This structure enhances maintainability and testability while facilitating future expansion.

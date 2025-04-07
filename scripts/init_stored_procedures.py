@@ -1,10 +1,3 @@
-import os
-import sys
-import argparse
-import psycopg2
-from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
-from pathlib import Path
-
 # Define all stored procedures as SQL strings
 STORED_PROCEDURES = {
     # Authentication procedures
